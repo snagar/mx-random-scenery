@@ -62,7 +62,7 @@ jobs:
           mkdir -p ${RELEASE_FOLDER}
           cp -r ./source/* "${RELEASE_FOLDER}/"
           
-          ls -lR release
+          # ls -lR release
           
           mkdir -p "${RELEASE_FOLDER}/random/sound"          
           # add hidden files in Unix based OSes. Needed to keep the folder.
@@ -148,7 +148,7 @@ jobs:
           
           
           # debug which files are part of the branch     
-          ls -lR release
+          # ls -lR release
           
           echo -e "TARGET_BRANCH - ${TARGET_BRANCH}"
           
