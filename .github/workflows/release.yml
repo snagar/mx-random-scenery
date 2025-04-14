@@ -1,36 +1,206 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Mission-X Random Package for Skunkcrafts
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
+    tags:
+      - '*'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+
+
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
+    # Execute only if we have "push + tag name" that starts with "v"
+    if: github.event_name == 'push' && ( startsWith(github.ref_name, 'v') || startsWith(github.ref_name, 'b') || startsWith(github.ref_name, 't') || startsWith(github.ref_name, '0.') )
+
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Set reusable strings
+        id: strings
+        shell: bash
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          echo "plugin-name=random" >> "$GITHUB_OUTPUT" 
+
+      - name: setup crc32 tool
+        shell: bash
+        run: |
+          sudo apt install -y libarchive-zip-perl
+          TAG=${GITHUB_REF##*/}
+          
+          if [ ! -z "$TAG" ]; then
+            VERSION="$TAG"
+          
+            echo "VERSION=${VERSION}" > version.mak
+          
+          else 
+            exit -1  ## abort script
+          fi
+
+          echo -e "TAG: ${TAG}\nThe content of version.mak is"
+          cat version.mak
+          
+      - name: Prepare SkunkCrafts Updater
+        shell: bash
+        run: |
+          # at this point version.mak should have the version number
+          source version.mak
+          RELEASE_FOLDER=release/${{ steps.strings.outputs.plugin-name }}
+          mkdir -p ${RELEASE_FOLDER}
+          cp -r ./source/* "${RELEASE_FOLDER}/"
+          
+          ls -lR release
+          
+          mkdir -p "${RELEASE_FOLDER}/missionx/random/sound"          
+          # add hidden files in Unix based OSes. Needed to keep the folder.
+          touch "${RELEASE_FOLDER}//missionx/random/sound/.sound_folder"                   
+          
+          file_size_bytes() {
+            file="$1"
+            local bytes
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            bytes=$(stat -f "%z" "$file")
+            elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            bytes=$(stat -c "%s" "$file")
+            else
+          echo "Error: Unsupported operating system for file size check."
+            return 1
+            fi
+          
+            echo $bytes            
+          }
+          
+          
+          ## SkunkCrafts
+            sed -e "s|@VERSION@|${VERSION}|g" skunkcrafts_updater.cfg.template > "${RELEASE_FOLDER}/skunkcrafts_updater.cfg"
+            sed -e "s|@VERSION@|${VERSION}|g" skunkcrafts_updater_beta.cfg.template > "${RELEASE_FOLDER}/skunkcrafts_updater_beta.cfg"
+
+          # create crc32 checksum for all values and write to skunkcrafts_updater_whitelist.txt
+          # format is <filename>|<crc32 checksum>
+          # include subdirectories
+          rm -f ${RELEASE_FOLDER}/skunkcrafts_updater_whitelist.txt
+          rm -f ${RELEASE_FOLDER}/skunkcrafts_updater_sizeslist.txt
+          find ${RELEASE_FOLDER}/ -type f ! \( -name '*skunkcrafts_updater*' -o -path '*skunkcrafts_updater*' \) -print0 | while IFS= read -r -d '' file; do
+            checksum_hex=$(crc32 "$file")
+            # get file size in bytes
+            file_size_in_bytes=$(file_size_bytes "$file")
+          
+            # Convert hex checksum to uint32 decimal
+            checksum_decimal=$((16#$checksum_hex))
+            # Remove "release/" prefix from $file
+            modified_file="${file#${RELEASE_FOLDER}/}"
+            # Remove the first character (should be "/")
+            if [[ "$modified_file" == /* ]]; then
+              modified_file="${modified_file:1}"
+            fi                        
+            echo "${modified_file}|$checksum_decimal" >> ${RELEASE_FOLDER}/skunkcrafts_updater_whitelist.txt            
+            echo "${modified_file}|$file_size_in_bytes" >> ${RELEASE_FOLDER}/skunkcrafts_updater_sizeslist.txt            
+          done
+          
+          echo -e "SkunkCrafts updater:\n--------------->"
+          cat ${RELEASE_FOLDER}/skunkcrafts_updater.cfg
+          echo -e "<--------------"
+
+          echo -e "\n\nSkunkCrafts whitelist - crc32:\n--------------->"
+          cat ${RELEASE_FOLDER}/skunkcrafts_updater_whitelist.txt
+          echo -e "<--------------"
+
+          echo -e "\n\nSkunkCrafts sizelist - bytes:\n--------------->"
+          cat ${RELEASE_FOLDER}/skunkcrafts_updater_sizeslist.txt
+          echo -e "<--------------"
+
+          touch ${RELEASE_FOLDER}/skunkcrafts_updater_blacklist.txt                  
+          
+          
+          # TAG=${GITHUB_REF##*/}          
+          TARGET_BRANCH=""
+          if [[ $VERSION == *"-test"* || $VERSION == t* ]]     # if TAG contains -test or starts with "t"
+          then
+            echo "This is a just a build test"
+            TARGET_BRANCH="build-test"
+          elif [[ $VERSION == *"-beta"* || $VERSION == b* ]]        # if TAG contains -beta or starts with "b"
+          then
+            echo "This is a beta release"
+            TARGET_BRANCH="beta"
+          elif [[ $VERSION == v* ]]        # if TAG starts with "v"
+          then
+            echo "This is a 'release'"
+            TARGET_BRANCH="release"
+          elif [[ $VERSION == 0* ]]        # if TAG starts with "0" means that we only do a dry run without pushing to github
+          then
+            TARGET_BRANCH="dry-run"
+          fi
+          
+          
+          # debug which files are part of the branch     
+          ls -lR release
+          
+          echo -e "TARGET_BRANCH - ${TARGET_BRANCH}"
+          
+          ## Create target branch
+          git checkout -b ${TARGET_BRANCH}
+          
+          if [ -d "TARGET_BRANCH" ]; then
+            echo "Directory ${TARGET_BRANCH} does exist."
+            git rm -r -f  ${TARGET_BRANCH}/*
+          else 
+            echo "Directory '${TARGET_BRANCH}' doesn't exist."
+          fi
+          
+          echo -e "Configuring git before pushing branch '${TARGET_BRANCH}' ."
+          git config --global user.email "snagar.dev@gmail.com"
+          git config --global user.name "snagar"
+
+          # Display branches
+          echo "-----"
+          echo -e "Display Branches"
+          git branch -a
+          # display folders
+          echo "-----"
+          ls -l          
+          echo "-----"
+          
+          echo "Preparing branch: ${TARGET_BRANCH}"          
+          echo "-----"
+          git add .         
+          echo -e "\n--------->"
+          ls -lR .
+          echo -e "\n<---------"
+          
+          
+          echo -e "\nCommit branch ${TARGET_BRANCH}\n---------------------"
+          git commit -m "new ${TARGET_BRANCH} - ${VERSION}"
+          
+          git remote add authenticated-origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          
+          ### Push the branch back.. or not
+          if [[ $TARGET_BRANCH != "dry-run" ]]; then          
+            echo -e "\nPushing ${TARGET_BRANCH}\n---------------------"
+            git push authenticated-origin ${TARGET_BRANCH} --force
+          
+            # git push -f -u origin ${TARGET_BRANCH} ## will fail since there is no TOKEN          
+          
+            echo -e "TARGET_BRANCH - ${TARGET_BRANCH}"
+            echo -e "\ngithub.ref - ${{ github.ref }} - ${{ github.ref_name }} \n"
+          else
+            echo "Will not push back the '$TARGET_BRANCH'. It is only for tests."
+          fi
+      
+      
+      
+ 
