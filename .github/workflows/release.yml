@@ -64,9 +64,9 @@ jobs:
           
           ls -lR release
           
-          mkdir -p "${RELEASE_FOLDER}/missionx/random/sound"          
+          mkdir -p "${RELEASE_FOLDER}/random/sound"          
           # add hidden files in Unix based OSes. Needed to keep the folder.
-          touch "${RELEASE_FOLDER}//missionx/random/sound/.sound_folder"                   
+          touch "${RELEASE_FOLDER}/random/sound/.sound_folder"                   
           
           file_size_bytes() {
             file="$1"
