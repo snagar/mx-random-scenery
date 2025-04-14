@@ -33,7 +33,7 @@ jobs:
         id: strings
         shell: bash
         run: |
-          echo "plugin-name=random" >> "$GITHUB_OUTPUT" 
+          echo "scenery-name=missionx" >> "$GITHUB_OUTPUT" 
 
       - name: setup crc32 tool
         shell: bash
@@ -58,7 +58,7 @@ jobs:
         run: |
           # at this point version.mak should have the version number
           source version.mak
-          RELEASE_FOLDER=release/${{ steps.strings.outputs.plugin-name }}
+          RELEASE_FOLDER=release/${{ steps.strings.outputs.scenery-name }}
           mkdir -p ${RELEASE_FOLDER}
           cp -r ./source/* "${RELEASE_FOLDER}/"
           
