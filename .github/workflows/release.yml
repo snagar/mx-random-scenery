@@ -200,7 +200,78 @@ jobs:
           else
             echo "Will not push back the '$TARGET_BRANCH'. It is only for tests."
           fi
-      
-      
-      
- 
+
+
+
+      - name: Compress Plugin Files
+        if: ( startsWith(github.ref_name, 'v') )
+        shell: bash
+        run: |
+          # Prepare the release compressed file
+          VERSION=${GITHUB_REF##*/}
+          #source version.mak
+          echo -e "\nVERSION=${VERSION}\n"
+          
+          file_size_mb() {
+            file="$1"
+          
+            local bytes
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+              # macOS
+              bytes=$(stat -f "%z" "$file")
+            elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+              # Linux
+              bytes=$(stat -c "%s" "$file")
+            else
+              echo "Error: Unsupported operating system for file size check."
+              return 1
+            fi
+          
+            echo $(echo "scale=2; $bytes / (1024 * 1024)" | bc -l)
+          }
+          
+          echo -e "\n---------"
+          
+          folder_to_compress="${{ github.workspace }}/release"
+          output_file="${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.7z"
+          split_size="60m"
+          
+          echo "Compressing '$folder_to_compress' to '$output_file'..."
+          (cd ./release && 7z a -t7z "${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.7z" *)
+          
+          # Check the size of the compressed file          
+          compressed_size=$(file_size_mb "$output_file")
+          echo -e "\n>> Initial compressed file size: ${compressed_size}M <<\n"          
+          
+          # Check if the size is greater than 98M
+          if (( $(echo "$compressed_size > 98" | bc -l) )); 
+          then
+            echo "Compressed file size exceeds 98M."
+            # Delete the previous compressed file
+            echo "Deleting previous compressed file: '$output_file'"
+            rm -f "$output_file"
+          
+            # Compress again with splitting
+            echo "Compressing '$folder_to_compress' to '$output_base.7z.001' with volume size ${split_size}..."
+            (cd ./release && 7z a -t7z -v"$split_size" "${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.7z" *)
+          
+            echo "Folder compressed into multiple volumes with a maximum size of ${split_size} each."
+          else
+            echo "Folder compressed successfully to '$output_file'."          
+          fi
+
+          echo -e "\n---------"
+          ls -l
+          echo -e "\n---------"      
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        if: ( startsWith(github.ref_name, 'v') )
+        with:
+          files: |
+            ${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}*7z*
+          prerelease: ${{ contains(github.ref_name, '-beta') || startsWith(github.ref_name, 'b') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
