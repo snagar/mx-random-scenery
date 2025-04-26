@@ -1,4 +1,4 @@
-The content of this repository, should be in the "random" folder under "missionx" Custom Scenery folder.
+You should extract this file into the "missionx" Scenery folder, and it should look similar to the following structure:
 
 
 XP
@@ -6,9 +6,9 @@ XP
 +- Custom Scenery
     |
     +- missionx
-         +- random
-             |
-             {Extract into this folder}
+        |
+        {Extract into this folder}
+
 
 
 Should look similar to the following tree:
@@ -18,8 +18,9 @@ XP
 +- Custom Scenery
     |
     +- missionx
+         + skunkcrafts_updater.cfg
+         + {other files}
          +- random
-             + skunkcrafts_updater.cfg
              |
              +- briefer
              +- img

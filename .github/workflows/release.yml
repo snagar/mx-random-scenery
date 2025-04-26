@@ -58,16 +58,15 @@ jobs:
         run: |
           # at this point version.mak should have the version number
           source version.mak
-          # RELEASE_FOLDER=release/${{ steps.strings.outputs.scenery-name }}
-          RELEASE_FOLDER=release
+          RELEASE_FOLDER=release/${{ steps.strings.outputs.scenery-name }}
           mkdir -p ${RELEASE_FOLDER}
-          cp -r ./source/random/* "${RELEASE_FOLDER}/"
+          cp -r ./source/* "${RELEASE_FOLDER}/"
           
           # ls -lR release
           
-          mkdir -p "${RELEASE_FOLDER}/sound"          
+          mkdir -p "${RELEASE_FOLDER}/random/sound"          
           # add hidden files in Unix based OSes. Needed to keep the folder.
-          touch "${RELEASE_FOLDER}/sound/.sound_folder"                   
+          touch "${RELEASE_FOLDER}/random/sound/.sound_folder"                   
           
           file_size_bytes() {
             file="$1"
