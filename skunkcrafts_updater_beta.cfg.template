@@ -1,6 +1,6 @@
 zone|custom
 liveries|false
-module|https://raw.githubusercontent.com/snagar/mx-random-scenery/refs/heads/beta/release/missionx/
+module|https://raw.githubusercontent.com/snagar/mx-random-scenery/refs/heads/beta/release/
 version|@VERSION@
 disabled|false
 name|Mission-X - Random Scenery Pack
