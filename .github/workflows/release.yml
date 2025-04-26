@@ -58,7 +58,8 @@ jobs:
         run: |
           # at this point version.mak should have the version number
           source version.mak
-          RELEASE_FOLDER=release/${{ steps.strings.outputs.scenery-name }}
+          # RELEASE_FOLDER=release/${{ steps.strings.outputs.scenery-name }}
+          RELEASE_FOLDER=release
           mkdir -p ${RELEASE_FOLDER}
           cp -r ./source/* "${RELEASE_FOLDER}/"
           
