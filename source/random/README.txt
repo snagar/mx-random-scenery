@@ -11,7 +11,7 @@ XP
 
 
 
-Should look similar to the following tree:
+After extraction, should look similar to the following tree:
 
 XP
 |
