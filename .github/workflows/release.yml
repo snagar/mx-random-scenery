@@ -30,7 +30,7 @@ jobs:
         id: strings
         shell: bash
         run: |
-          echo "scenery-name=missionx" >> "$GITHUB_OUTPUT" 
+          echo "scenery-name=missionx_random_pack" >> "$GITHUB_OUTPUT" 
 
       - name: setup crc32 tool
         shell: bash
