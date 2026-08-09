@@ -237,7 +237,7 @@ jobs:
           split_size="60m"
           
           echo "Compressing '$folder_to_compress' to '$output_file'..."
-          (cd ./release && 7z a -t7z "${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.7z" *)
+          (cd ./release && 7z a -tzip "${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.zip" *)
           
           # Check the size of the compressed file          
           compressed_size=$(file_size_mb "$output_file")
@@ -252,8 +252,8 @@ jobs:
             rm -f "$output_file"
           
             # Compress again with splitting
-            echo "Compressing '$folder_to_compress' to '$output_base.7z.001' with volume size ${split_size}..."
-            (cd ./release && 7z a -t7z -v"$split_size" "${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.7z" *)
+            echo "Compressing '$folder_to_compress' to '$output_base.zip.001' with volume size ${split_size}..."
+            (cd ./release && 7z a -tzip -v"$split_size" "${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.zip" *)
           
             echo "Folder compressed into multiple volumes with a maximum size of ${split_size} each."
           else
