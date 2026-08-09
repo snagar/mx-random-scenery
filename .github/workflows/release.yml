@@ -270,7 +270,7 @@ jobs:
         if: ( startsWith(github.ref_name, 'v') )
         with:
           files: |
-            ${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}*7z*
+            ${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}*zip*
           prerelease: ${{ contains(github.ref_name, '-beta') || startsWith(github.ref_name, 'b') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
