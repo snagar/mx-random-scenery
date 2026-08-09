@@ -233,7 +233,7 @@ jobs:
           echo -e "\n---------"
           
           folder_to_compress="${{ github.workspace }}/release"
-          output_file="${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.7z"
+          output_file="${{ github.workspace }}/${{ steps.strings.outputs.scenery-name }}-${VERSION}.zip"
           split_size="60m"
           
           echo "Compressing '$folder_to_compress' to '$output_file'..."
