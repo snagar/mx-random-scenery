@@ -1,0 +1,1 @@
+VERSION=b25.04.3-beta1
